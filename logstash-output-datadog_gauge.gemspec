@@ -1,13 +1,11 @@
 Gem::Specification.new do |s|
 
-  s.name            = 'logstash-output-datadog_metrics'
-  s.version         = '2.0.4'
+  s.name            = 'logstash-output-datadog_gauge'
+  s.version         = '0.0.1'
   s.licenses        = ['Apache License (2.0)']
-  s.summary         = "This output lets you send metrics to DataDogHQ based on Logstash events."
-  s.description     = "This gem is a Logstash plugin required to be installed on top of the Logstash core pipeline using $LS_HOME/bin/logstash-plugin install gemname. This gem is not a stand-alone program"
-  s.authors         = ["Elastic"]
-  s.email           = 'info@elastic.co'
-  s.homepage        = "http://www.elastic.co/guide/en/logstash/current/index.html"
+  s.summary         = "Send gauge metrics to DataDogHQ based on Logstash events."
+  s.description     = "This gem is a Logstash plugin required to be installed on top of the Logstash core pipeline. You must manually edit the Logstash Gemfile"
+  s.authors         = ["IST Research"]
   s.require_paths = ["lib"]
 
   # Files
