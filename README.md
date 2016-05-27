@@ -13,11 +13,14 @@ Edit the Logstash `Gemfile` to include the following:
 Run the following
 
     # Logstash 2.3 and higher
-    bin/logstash-plugin install --no-verify
+    $ ./bin/logstash-plugin install --no-verify
 
     # Prior to Logstash 2.3
-    bin/plugin install --no-verify
+    $ ./bin/plugin install --no-verify
 
+Ensure the plugin was installed correctly
+
+    $ ./bin/logstash-plugin list | grep datadog_gauge
 
 ## Usage
 
