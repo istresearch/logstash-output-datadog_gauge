@@ -14,25 +14,13 @@ module LogStash module Outputs class DatadogMetrics < LogStash::Outputs::Base
 
   include Stud::Buffer
 
-  config_name "datadog_metrics"
+  config_name "datadog_gauge"
 
   # Your DatadogHQ API key. https://app.datadoghq.com/account/settings#api
   config :api_key, :validate => :string, :required => true
 
   # The name of the time series.
-  config :metric_name, :validate => :string, :default => "%{metric_name}"
-
-  # The value.
-  config :metric_value, :default => "%{metric_value}"
-
-  # The type of the metric.
-  config :metric_type, :validate => ["gauge", "counter", "%{metric_type}"], :default => "%{metric_type}"
-
-  # The name of the host that produced the metric.
-  config :host, :validate => :string, :default => "%{host}"
-
-  # The name of the device that produced the metric.
-  config :device, :validate => :string, :default => "%{metric_device}"
+  config :metric_name, :validate => :string, :required => true
 
   # Set any custom tags for this event,
   # default are the Logstash tags if any.
@@ -64,39 +52,29 @@ module LogStash module Outputs class DatadogMetrics < LogStash::Outputs::Base
     )
   end # def register
 
-  # public
   def receive(event)
-    
-    return unless @metric_name && @metric_value && @metric_type
-    return unless ["gauge", "counter"].include? event.sprintf(@metric_type)
-
+    ##########################################################################
+    # IST UPDATE:
+    # We don't need to push individual event data anymore since we aggregate
+    # the events ourselves now. I'm not going to mess with any of the event
+    # buffer logic because it's working as-is.
+    ##########################################################################
     dd_metrics = Hash.new
-    dd_metrics['metric'] = event.sprintf(@metric_name)
-    dd_metrics['points'] = [[to_epoch(event.timestamp), event.sprintf(@metric_value).to_f]]
-    dd_metrics['type'] = event.sprintf(@metric_type)
-    dd_metrics['host'] = event.sprintf(@host)
-    dd_metrics['device'] = event.sprintf(@device)
-
-    if @dd_tags
-      tagz = @dd_tags.collect {|x| event.sprintf(x) }
-    else
-      tagz = event["tags"]
-    end
-    dd_metrics['tags'] = tagz if tagz
-
     @logger.info("Queueing event", :event => dd_metrics)
     buffer_receive(dd_metrics)
-  end # def receive
+  end
 
-  # public
   def flush(events, final=false)
-    dd_series = Hash.new
-    dd_series['series'] = Array(events).flatten
+    events_arr = Array(events).flatten
+
+    # Must be wrapped in array according to API
+    dd_series = {'series' => [construct_metric_data(events_arr)] }
 
     request = Net::HTTP::Post.new("#{@uri.path}?api_key=#{@api_key}")
 
     begin
       request.body = series_to_json(dd_series)
+      puts request.body
       request.add_field("Content-Type", 'application/json')
       response = @client.request(request)
       @logger.info("DD convo", :request => request.inspect, :response => response.inspect)
@@ -104,9 +82,36 @@ module LogStash module Outputs class DatadogMetrics < LogStash::Outputs::Base
     rescue Exception => e
       @logger.warn("Unhandled exception", :request => request.inspect, :response => response.inspect, :exception => e.inspect)
     end
-  end # def flush
+  end
 
   private
+  ##########################################################################
+  # IST UPDATE:
+  # Since the Datadog API only accepts guage metric requests and the
+  # original logstash datadog plugin forces us to hardcode a metric value,
+  # we just count the number of events present in the queue when flushing
+  ##########################################################################
+  def construct_metric_data(events_arr)
+    now = Time.now.to_i
+    num_log_entries = events_arr.size
+    metric_data = {
+      'metric' => @metric_name,
+
+      # Gauge is the only valid metric for the API
+      'type' => 'gauge'
+    }
+
+    if @dd_tags
+      metric_data['tags'] = @dd_tags
+    end
+
+    # Nested array required by API.
+    # Float point metric value required by API
+    metric_data['points'] = [[now, num_log_entries.to_f]]
+
+    return metric_data
+  end
+
 
   def series_to_json(series)
     LogStash::Json.dump(series)
