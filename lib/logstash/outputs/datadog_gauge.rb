@@ -22,6 +22,9 @@ module LogStash module Outputs class DatadogMetrics < LogStash::Outputs::Base
   # The name of the time series.
   config :metric_name, :validate => :string, :required => true
 
+  # The name of the host that produced the metric.
+  config :host, :validate => :string, :default => "%{host}"
+
   # Set any custom tags for this event,
   # default are the Logstash tags if any.
   config :dd_tags, :validate => :array
@@ -96,6 +99,7 @@ module LogStash module Outputs class DatadogMetrics < LogStash::Outputs::Base
     num_log_entries = events_arr.size
     metric_data = {
       'metric' => @metric_name,
+      'host' => @host,
 
       # Gauge is the only valid metric for the API
       'type' => 'gauge'

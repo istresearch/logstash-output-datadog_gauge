@@ -32,6 +32,7 @@ Within a logstash config
             queue_size => 100000
             timeframe => 60
             api_key => "DATADOG_API_KEY"
+            host => "myhost.com"
         }
     }
 

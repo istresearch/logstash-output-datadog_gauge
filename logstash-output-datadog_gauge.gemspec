@@ -1,7 +1,7 @@
 Gem::Specification.new do |s|
 
   s.name            = 'logstash-output-datadog_gauge'
-  s.version         = '0.0.1'
+  s.version         = '0.0.2'
   s.licenses        = ['Apache License (2.0)']
   s.summary         = "Send gauge metrics to DataDogHQ based on Logstash events."
   s.description     = "This gem is a Logstash plugin required to be installed on top of the Logstash core pipeline. You must manually edit the Logstash Gemfile"
